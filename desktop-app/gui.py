@@ -443,10 +443,11 @@ class TranscriptionApp:
             )
             
             # Update UI with results (in main thread)
-            self.root.after(0, lambda: self._on_transcription_complete(result))
+            self.root.after(0, lambda r=result: self._on_transcription_complete(r))
             
         except Exception as e:
-            self.root.after(0, lambda: self._on_transcription_error(str(e)))
+            error_msg = str(e)
+            self.root.after(0, lambda msg=error_msg: self._on_transcription_error(msg))
     
     def _on_transcription_complete(self, result: dict):
         """Handle successful transcription."""

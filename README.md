@@ -1,20 +1,22 @@
 # 🎙️ Audio Transcriber
 
-A modern, locally-run audio transcription tool powered by **OpenAI's Whisper** model. Convert any audio file to text with a beautiful desktop GUI — no internet required after initial setup.
+A modern, locally-run audio transcription tool powered by **OpenAI's Whisper** model with **MLX GPU acceleration** for Apple Silicon and **speaker diarization** to identify who's talking.
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat-square&logo=python)
 ![Whisper](https://img.shields.io/badge/OpenAI-Whisper-412991?style=flat-square&logo=openai)
+![MLX](https://img.shields.io/badge/Apple-MLX-000000?style=flat-square&logo=apple)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square)
+![Platform](https://img.shields.io/badge/Platform-macOS%20(Apple%20Silicon)-lightgrey?style=flat-square)
 
 ---
 
 ## ✨ Features
 
+- 🚀 **MLX GPU Acceleration** — Runs on Apple Silicon GPU for blazing fast transcription
+- 🗣️ **Speaker Diarization** — Identifies who's talking in conversations
 - 🎨 **Modern Dark UI** — Clean, intuitive interface built with ttkbootstrap
 - 🔒 **100% Local Processing** — Your audio never leaves your machine
 - 🌍 **Multi-language Support** — Automatic language detection and transcription
-- ⏱️ **Timestamped Output** — Get precise timestamps for each segment
 - 📊 **Multiple Model Sizes** — Choose between speed and accuracy
 - 📁 **Multiple Formats** — Supports MP3, WAV, M4A, FLAC, OGG, and more
 
@@ -24,19 +26,21 @@ A modern, locally-run audio transcription tool powered by **OpenAI's Whisper** m
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  🎙️ Audio Transcriber                Powered by Whisper    │
+│  🎙️ Audio Transcriber    MLX GPU Accelerated • Speaker ID  │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │     📂 Click to select or drag & drop audio file    │   │
+│  │          📂 Click to select an audio file           │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
-│  Model: [base ▼]  Fast, good accuracy (~1.5GB RAM)         │
-│  ☑️ Include timestamps in output                            │
+│  Model:           [base ▼]  Fast, good accuracy             │
+│  Speaker ID:      ☑️ Identify speakers (requires HF token)  │
+│  HuggingFace Token: [••••••••••••••••] [👁]                 │
+│  Timestamps:      ☐ Include timestamps in output            │
 │                                                             │
 │  [🎯 Transcribe]  [📁 Open Output Folder]                   │
 │                                                             │
-│  ═══════════════════════════════════════════════════════   │
-│  Ready. Select an audio file to begin.                     │
+│  ████████████████████░░░░░░░░░░░░  65%                     │
+│  Elapsed: 1m 23s | Remaining: ~45s                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -46,6 +50,7 @@ A modern, locally-run audio transcription tool powered by **OpenAI's Whisper** m
 
 ### Prerequisites
 
+- **macOS with Apple Silicon** (M1/M2/M3/M4)
 - Python 3.8 or higher
 - FFmpeg (for audio processing)
 
@@ -53,116 +58,46 @@ A modern, locally-run audio transcription tool powered by **OpenAI's Whisper** m
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/audio-transcriber.git
-   cd audio-transcriber
+   git clone https://github.com/satyamgoyal06/audio-transcription.git
+   cd audio-transcription
    ```
 
 2. **Install FFmpeg** (if not already installed)
-   
-   **macOS:**
    ```bash
    brew install ffmpeg
    ```
-   
-   **Windows:**
-   ```bash
-   # Using chocolatey
-   choco install ffmpeg
-   
-   # Or download from https://ffmpeg.org/download.html
-   ```
-   
-   **Linux (Ubuntu/Debian):**
-   ```bash
-   sudo apt update && sudo apt install ffmpeg
-   ```
 
-3. **Set up virtual environment** (recommended)
+3. **Set up virtual environment**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python3 -m venv venv
+   source venv/bin/activate
    ```
 
 4. **Install dependencies**
    ```bash
-   cd desktop-app
-   pip install -r requirements.txt
+   pip install -r desktop-app/requirements.txt
    ```
 
 5. **Run the application**
    ```bash
-   python main.py
+   python desktop-app/main.py
    ```
 
 ---
 
-## 📖 How It Works
+## 🗣️ Speaker Diarization Setup
 
-### Architecture
+To enable speaker identification (who said what), you need a HuggingFace token:
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Audio File    │────▶│  Whisper Model   │────▶│   Text Output   │
-│  (MP3/WAV/...)  │     │  (Local Process) │     │  (.txt file)    │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-         │                       │                        │
-         ▼                       ▼                        ▼
-    User drops file      Model transcribes        Timestamped text
-    into the GUI         audio to text            saved to disk
-```
+1. **Create account** at [huggingface.co](https://huggingface.co)
 
-### The Whisper Model
+2. **Accept model terms** at [pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1)
 
-[Whisper](https://github.com/openai/whisper) is OpenAI's open-source automatic speech recognition (ASR) system. It was trained on 680,000 hours of multilingual data and demonstrates robust performance across many languages.
+3. **Get your token** at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
 
-**Key capabilities:**
-- Speech recognition in 99 languages
-- Translation to English
-- Language identification
-- Robust to accents, background noise, and technical language
+4. **Paste token** in the app's "HuggingFace Token" field
 
-### Model Sizes
-
-| Model  | Parameters | Required VRAM | Relative Speed | Best For |
-|--------|------------|---------------|----------------|----------|
-| tiny   | 39 M       | ~1 GB         | ~32x           | Quick drafts, testing |
-| base   | 74 M       | ~1.5 GB       | ~16x           | Everyday use |
-| small  | 244 M      | ~2.5 GB       | ~6x            | Better accuracy |
-| medium | 769 M      | ~5 GB         | ~2x            | High-quality transcription |
-| large  | 1550 M     | ~10 GB        | 1x             | Maximum accuracy |
-
----
-
-## 📂 Project Structure
-
-```
-audio-transcriber/
-├── desktop-app/
-│   ├── main.py           # Application entry point
-│   ├── gui.py            # GUI implementation (ttkbootstrap)
-│   ├── transcriber.py    # Core transcription engine
-│   └── requirements.txt  # Python dependencies
-│
-├── README.md             # This file
-└── LICENSE               # MIT License
-```
-
----
-
-## 🎯 Usage
-
-### Basic Usage
-
-1. Launch the application with `python main.py`
-2. Click the drop zone or drag & drop an audio file
-3. Select your preferred model (base is recommended for most uses)
-4. Toggle timestamps if needed
-5. Click **Transcribe**
-6. Find your transcription saved alongside the original audio file
-
-### Output Format
-
-The generated text file includes:
+### Output with Speaker Identification
 
 ```
 ============================================================
@@ -172,66 +107,105 @@ AUDIO TRANSCRIPTION
 Source File: interview.mp3
 Detected Language: en
 Model Used: base
-Transcribed: 2024-01-29 21:55:00
+Backend: MLX (GPU)
+Speaker Identification: Yes
 
 ------------------------------------------------------------
 
-TIMESTAMPED TRANSCRIPTION:
+CONVERSATION:
 
-[00:00:00.000 --> 00:00:05.500]
-Welcome to the podcast, today we're discussing...
+Speaker 1:
+  Welcome to the podcast. Today we're discussing AI.
 
-[00:00:05.500 --> 00:00:12.300]
-Thank you for having me, I'm excited to be here.
+Speaker 2:
+  Thanks for having me. I'm excited to be here.
+
+Speaker 1:
+  Let's start with the basics. What is machine learning?
+
+Speaker 2:
+  Machine learning is a subset of AI that enables systems
+  to learn from data without being explicitly programmed.
 
 ------------------------------------------------------------
 
 FULL TRANSCRIPTION:
 
-Welcome to the podcast, today we're discussing...
-Thank you for having me, I'm excited to be here.
+Welcome to the podcast. Today we're discussing AI...
 
 ============================================================
 ```
 
 ---
 
-## 🔧 Supported Audio Formats
+## 📖 How It Works
 
-| Format | Extension | Notes |
-|--------|-----------|-------|
-| MP3    | `.mp3`    | Most common |
-| WAV    | `.wav`    | Uncompressed |
-| M4A    | `.m4a`    | Apple format |
-| FLAC   | `.flac`   | Lossless |
-| OGG    | `.ogg`    | Open format |
-| WMA    | `.wma`    | Windows Media |
-| AAC    | `.aac`    | Advanced Audio |
-| Opus   | `.opus`   | High quality |
-| WebM   | `.webm`   | Web format |
-| MP4    | `.mp4`    | Video (audio track) |
+### Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Audio File    │────▶│   MLX Whisper    │────▶│   Transcription │
+│  (MP3/WAV/...)  │     │   (Apple GPU)    │     │                 │
+└─────────────────┘     └──────────────────┘     └────────┬────────┘
+                                                          │
+┌─────────────────┐     ┌──────────────────┐              │
+│  Speaker Labels │◀────│   Pyannote       │◀─────────────┘
+│  (Who said what)│     │   (Diarization)  │
+└─────────────────┘     └──────────────────┘
+```
+
+### Technologies
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Transcription | MLX-Whisper | GPU-accelerated speech-to-text |
+| Speaker ID | Pyannote Audio | Identify different speakers |
+| GUI | ttkbootstrap | Modern themed interface |
+| Audio Processing | FFmpeg | Format conversion & duration |
+
+### Model Sizes
+
+| Model  | Speed | Accuracy | RAM | Best For |
+|--------|-------|----------|-----|----------|
+| tiny   | ⚡⚡⚡⚡ | ★★☆☆ | ~1 GB | Quick drafts |
+| base   | ⚡⚡⚡ | ★★★☆ | ~1.5 GB | **Daily use** |
+| small  | ⚡⚡ | ★★★★ | ~2.5 GB | Better accuracy |
+| medium | ⚡ | ★★★★☆ | ~5 GB | High quality |
+| large  | 🐢 | ★★★★★ | ~10 GB | Maximum accuracy |
 
 ---
 
-## 🛠️ Technical Details
+## 📂 Project Structure
 
-### Dependencies
+```
+audio-transcription/
+├── desktop-app/
+│   ├── main.py           # Application entry point
+│   ├── gui.py            # GUI with speaker diarization support
+│   ├── transcriber.py    # MLX transcription + diarization engine
+│   └── requirements.txt  # Python dependencies
+│
+├── README.md             # This file
+├── LICENSE               # MIT License
+└── .gitignore
+```
 
-| Package | Purpose |
-|---------|---------|
-| `openai-whisper` | Core transcription model |
-| `torch` | PyTorch for ML inference |
-| `ttkbootstrap` | Modern themed Tkinter widgets |
-| `tkinterdnd2` | Drag-and-drop support (optional) |
+---
 
-### System Requirements
+## 🔧 Supported Audio Formats
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| RAM | 4 GB | 8+ GB |
-| Storage | 2 GB | 5+ GB (for larger models) |
-| Python | 3.8 | 3.10+ |
-| OS | macOS 10.14+ / Windows 10 / Ubuntu 18.04+ | Latest |
+| Format | Extension |
+|--------|-----------|
+| MP3    | `.mp3`    |
+| WAV    | `.wav`    |
+| M4A    | `.m4a`    |
+| FLAC   | `.flac`   |
+| OGG    | `.ogg`    |
+| WMA    | `.wma`    |
+| AAC    | `.aac`    |
+| Opus   | `.opus`   |
+| WebM   | `.webm`   |
+| MP4    | `.mp4`    |
 
 ---
 
@@ -248,10 +222,10 @@ Contributions are welcome! Here's how you can help:
 ### Ideas for Contribution
 
 - [ ] Add CLI mode for batch processing
-- [ ] Implement audio waveform visualization
-- [ ] Add export to SRT/VTT subtitle formats
-- [ ] Create Windows installer (.exe)
-- [ ] Add speaker diarization (who said what)
+- [ ] Export to SRT/VTT subtitle formats
+- [ ] Real-time microphone transcription
+- [ ] Multi-language translation
+- [ ] Custom speaker naming
 
 ---
 
@@ -263,9 +237,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [OpenAI Whisper](https://github.com/openai/whisper) — The incredible speech recognition model
-- [ttkbootstrap](https://github.com/israel-dryer/ttkbootstrap) — Beautiful themed Tkinter widgets
-- [FFmpeg](https://ffmpeg.org/) — Audio processing powerhouse
+- [OpenAI Whisper](https://github.com/openai/whisper) — Speech recognition model
+- [MLX](https://github.com/ml-explore/mlx) — Apple's ML framework for Apple Silicon
+- [Pyannote Audio](https://github.com/pyannote/pyannote-audio) — Speaker diarization
+- [ttkbootstrap](https://github.com/israel-dryer/ttkbootstrap) — Beautiful themed Tkinter
 
 ---
 
@@ -273,11 +248,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Satyam Goyal**
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Portfolio: [yourwebsite.com](https://yourwebsite.com)
+- GitHub: [@satyamgoyal06](https://github.com/satyamgoyal06)
 
 ---
 
 <p align="center">
-  Made with ❤️ and 🎙️
+  Made with ❤️ using 🎙️ Whisper + 🍎 MLX
 </p>

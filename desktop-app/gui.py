@@ -1,6 +1,6 @@
 """
 Modern GUI for Audio Transcription
-A clean, dark-themed interface with drag-and-drop support.
+A clean, dark-themed interface with speaker diarization support.
 """
 
 import tkinter as tk
@@ -22,10 +22,10 @@ class TranscriptionApp:
         self.root = ttkb.Window(
             title="🎙️ Audio Transcriber",
             themename="darkly",
-            size=(700, 650),
+            size=(750, 750),
             resizable=(True, True)
         )
-        self.root.minsize(600, 550)
+        self.root.minsize(650, 650)
         
         # Center window on screen
         self._center_window()
@@ -61,7 +61,7 @@ class TranscriptionApp:
         
         # === Header ===
         header_frame = ttkb.Frame(main_frame)
-        header_frame.pack(fill=X, pady=(0, 20))
+        header_frame.pack(fill=X, pady=(0, 15))
         
         title_label = ttkb.Label(
             header_frame,
@@ -73,7 +73,7 @@ class TranscriptionApp:
         
         subtitle = ttkb.Label(
             header_frame,
-            text="Powered by OpenAI Whisper",
+            text="MLX GPU Accelerated • Speaker Diarization",
             font=("Helvetica", 10),
             bootstyle="secondary"
         )
@@ -83,35 +83,35 @@ class TranscriptionApp:
         self.drop_frame = ttkb.Labelframe(
             main_frame,
             text="Audio File",
-            padding=20,
+            padding=15,
             bootstyle="primary"
         )
-        self.drop_frame.pack(fill=X, pady=(0, 15))
+        self.drop_frame.pack(fill=X, pady=(0, 10))
         
         self.drop_zone = ttkb.Frame(
             self.drop_frame,
             bootstyle="dark",
-            padding=30
+            padding=20
         )
         self.drop_zone.pack(fill=X)
         
         self.drop_label = ttkb.Label(
             self.drop_zone,
-            text="📂 Click to select or drag & drop an audio file here",
+            text="📂 Click to select an audio file",
             font=("Helvetica", 12),
             bootstyle="light",
             cursor="hand2"
         )
-        self.drop_label.pack(pady=20)
+        self.drop_label.pack(pady=15)
         
         # File info label
         self.file_info = ttkb.Label(
             self.drop_frame,
             text="",
-            font=("Helvetica", 10),
+            font=("Helvetica", 9),
             bootstyle="info"
         )
-        self.file_info.pack(pady=(10, 0))
+        self.file_info.pack(pady=(5, 0))
         
         # Bind click to open file dialog
         self.drop_zone.bind("<Button-1>", lambda e: self._browse_file())
@@ -124,17 +124,17 @@ class TranscriptionApp:
             padding=15,
             bootstyle="info"
         )
-        settings_frame.pack(fill=X, pady=(0, 15))
+        settings_frame.pack(fill=X, pady=(0, 10))
         
         # Model selection
         model_row = ttkb.Frame(settings_frame)
-        model_row.pack(fill=X, pady=5)
+        model_row.pack(fill=X, pady=3)
         
         ttkb.Label(
             model_row,
             text="Model:",
             font=("Helvetica", 11),
-            width=15
+            width=18
         ).pack(side=LEFT)
         
         self.model_var = tk.StringVar(value="base")
@@ -145,10 +145,10 @@ class TranscriptionApp:
             textvariable=self.model_var,
             values=models,
             state="readonly",
-            width=15,
+            width=12,
             bootstyle="primary"
         )
-        self.model_combo.pack(side=LEFT, padx=(0, 15))
+        self.model_combo.pack(side=LEFT, padx=(0, 10))
         
         self.model_desc = ttkb.Label(
             model_row,
@@ -160,18 +160,77 @@ class TranscriptionApp:
         
         self.model_combo.bind("<<ComboboxSelected>>", self._on_model_change)
         
+        # Speaker diarization option
+        diar_row = ttkb.Frame(settings_frame)
+        diar_row.pack(fill=X, pady=3)
+        
+        ttkb.Label(
+            diar_row,
+            text="Speaker ID:",
+            font=("Helvetica", 11),
+            width=18
+        ).pack(side=LEFT)
+        
+        self.diarization_var = tk.BooleanVar(value=True)
+        ttkb.Checkbutton(
+            diar_row,
+            text="Identify speakers (requires HF token)",
+            variable=self.diarization_var,
+            bootstyle="success-round-toggle",
+            command=self._toggle_diarization
+        ).pack(side=LEFT)
+        
+        # HuggingFace token input
+        token_row = ttkb.Frame(settings_frame)
+        token_row.pack(fill=X, pady=3)
+        
+        ttkb.Label(
+            token_row,
+            text="HuggingFace Token:",
+            font=("Helvetica", 11),
+            width=18
+        ).pack(side=LEFT)
+        
+        self.token_var = tk.StringVar()
+        self.token_entry = ttkb.Entry(
+            token_row,
+            textvariable=self.token_var,
+            show="•",
+            width=40,
+            bootstyle="secondary"
+        )
+        self.token_entry.pack(side=LEFT, padx=(0, 5))
+        
+        self.show_token_btn = ttkb.Button(
+            token_row,
+            text="👁",
+            width=3,
+            command=self._toggle_token_visibility,
+            bootstyle="secondary-outline"
+        )
+        self.show_token_btn.pack(side=LEFT)
+        
+        # Token help text
+        token_help = ttkb.Label(
+            settings_frame,
+            text="Get token at huggingface.co/settings/tokens • Accept pyannote/speaker-diarization-3.1 terms first",
+            font=("Helvetica", 8),
+            bootstyle="secondary"
+        )
+        token_help.pack(anchor=W, pady=(3, 0))
+        
         # Timestamps option
         ts_row = ttkb.Frame(settings_frame)
-        ts_row.pack(fill=X, pady=5)
+        ts_row.pack(fill=X, pady=3)
         
         ttkb.Label(
             ts_row,
             text="Timestamps:",
             font=("Helvetica", 11),
-            width=15
+            width=18
         ).pack(side=LEFT)
         
-        self.timestamps_var = tk.BooleanVar(value=True)
+        self.timestamps_var = tk.BooleanVar(value=False)
         ttkb.Checkbutton(
             ts_row,
             text="Include timestamps in output",
@@ -181,14 +240,14 @@ class TranscriptionApp:
         
         # === Action Buttons ===
         button_frame = ttkb.Frame(main_frame)
-        button_frame.pack(fill=X, pady=(0, 15))
+        button_frame.pack(fill=X, pady=(0, 10))
         
         self.transcribe_btn = ttkb.Button(
             button_frame,
             text="🎯 Transcribe",
             command=self._start_transcription,
             bootstyle="success",
-            width=20
+            width=18
         )
         self.transcribe_btn.pack(side=LEFT, padx=(0, 10))
         
@@ -197,7 +256,7 @@ class TranscriptionApp:
             text="📁 Open Output Folder",
             command=self._open_output_folder,
             bootstyle="info-outline",
-            width=20,
+            width=18,
             state=DISABLED
         )
         self.open_output_btn.pack(side=LEFT)
@@ -206,10 +265,10 @@ class TranscriptionApp:
         progress_frame = ttkb.Labelframe(
             main_frame,
             text="Progress",
-            padding=15,
+            padding=10,
             bootstyle="secondary"
         )
-        progress_frame.pack(fill=X, pady=(0, 15))
+        progress_frame.pack(fill=X, pady=(0, 10))
         
         # Progress bar (determinate mode for real progress)
         self.progress_var = tk.DoubleVar(value=0)
@@ -224,7 +283,7 @@ class TranscriptionApp:
         
         # Progress percentage and time
         progress_info_frame = ttkb.Frame(progress_frame)
-        progress_info_frame.pack(fill=X, pady=(0, 5))
+        progress_info_frame.pack(fill=X, pady=(0, 3))
         
         self.progress_percent = ttkb.Label(
             progress_info_frame,
@@ -267,7 +326,7 @@ class TranscriptionApp:
             fg="#eaeaea",
             insertbackground="#ffffff",
             selectbackground="#4a4a6a",
-            height=8
+            height=10
         )
         self.output_text.pack(fill=BOTH, expand=YES, side=LEFT)
         
@@ -283,22 +342,32 @@ class TranscriptionApp:
         # Footer
         footer = ttkb.Label(
             main_frame,
-            text="Supported formats: " + ", ".join(SUPPORTED_FORMATS),
+            text="Supported: " + ", ".join(SUPPORTED_FORMATS),
             font=("Helvetica", 8),
             bootstyle="secondary"
         )
-        footer.pack(pady=(10, 0))
+        footer.pack(pady=(5, 0))
     
     def _setup_drag_drop(self):
         """Setup drag and drop functionality."""
-        try:
-            from tkinterdnd2 import DND_FILES, TkinterDnD
-            # Note: For full drag-drop, the root needs to be TkinterDnD.Tk()
-            # Since we're using ttkbootstrap, we'll rely on file dialog
-            pass
-        except ImportError:
-            # tkinterdnd2 not available, file dialog is the fallback
-            pass
+        pass
+    
+    def _toggle_token_visibility(self):
+        """Toggle password visibility for token entry."""
+        current = self.token_entry.cget("show")
+        if current == "•":
+            self.token_entry.config(show="")
+            self.show_token_btn.config(text="🔒")
+        else:
+            self.token_entry.config(show="•")
+            self.show_token_btn.config(text="👁")
+    
+    def _toggle_diarization(self):
+        """Enable/disable token entry based on diarization checkbox."""
+        if self.diarization_var.get():
+            self.token_entry.config(state=NORMAL)
+        else:
+            self.token_entry.config(state=DISABLED)
     
     def _browse_file(self):
         """Open file dialog to select audio file."""
@@ -333,14 +402,14 @@ class TranscriptionApp:
         duration_str = self._format_duration(self.audio_duration) if self.audio_duration > 0 else "Unknown"
         
         self.drop_label.config(text=f"📄 {filename}")
-        self.file_info.config(text=f"Size: {size_mb:.2f} MB | Duration: {duration_str} | Path: {file_path}")
+        self.file_info.config(text=f"Size: {size_mb:.2f} MB | Duration: {duration_str}")
         self._update_status(f"File loaded: {filename}")
         
         # Show estimated time
         if self.audio_duration > 0:
             model = self.model_var.get()
             est_time = self._estimate_transcription_time(model)
-            self.time_label.config(text=f"Estimated time: {self._format_duration(est_time)}")
+            self.time_label.config(text=f"Estimated: ~{self._format_duration(est_time)}")
     
     def _format_duration(self, seconds: float) -> str:
         """Format seconds to human-readable duration."""
@@ -359,9 +428,14 @@ class TranscriptionApp:
         """Estimate transcription time based on audio duration and model."""
         if self.audio_duration <= 0:
             return 0
-        speed = Transcriber.MODEL_SPEED.get(model, 16.0)
-        # Add 5 seconds for model loading overhead
-        return (self.audio_duration / speed) + 5
+        speed = Transcriber.MODEL_SPEED.get(model, 30.0)
+        base_time = self.audio_duration / speed
+        
+        # Add time for diarization if enabled
+        if self.diarization_var.get() and self.token_var.get():
+            base_time += self.audio_duration * 0.3  # Diarization adds ~30% time
+        
+        return base_time + 5  # Add 5 seconds for model loading
     
     def _on_model_change(self, event=None):
         """Update model description when selection changes."""
@@ -371,7 +445,7 @@ class TranscriptionApp:
         # Update estimated time
         if self.audio_duration > 0:
             est_time = self._estimate_transcription_time(model)
-            self.time_label.config(text=f"Estimated time: {self._format_duration(est_time)}")
+            self.time_label.config(text=f"Estimated: ~{self._format_duration(est_time)}")
     
     def _start_transcription(self):
         """Start the transcription process."""
@@ -383,10 +457,25 @@ class TranscriptionApp:
             messagebox.showinfo("In Progress", "Transcription is already in progress.")
             return
         
+        # Check for HF token if diarization is enabled
+        hf_token = None
+        if self.diarization_var.get():
+            hf_token = self.token_var.get().strip()
+            if not hf_token:
+                result = messagebox.askyesno(
+                    "No HuggingFace Token",
+                    "Speaker identification requires a HuggingFace token.\n\n"
+                    "Continue without speaker identification?"
+                )
+                if not result:
+                    return
+                hf_token = None
+        
         # Disable UI during transcription
         self.is_transcribing = True
         self.transcribe_btn.config(state=DISABLED)
         self.model_combo.config(state=DISABLED)
+        self.token_entry.config(state=DISABLED)
         
         # Reset progress
         self.progress_var.set(0)
@@ -400,7 +489,11 @@ class TranscriptionApp:
         self._update_progress_display()
         
         # Run transcription in thread
-        thread = threading.Thread(target=self._transcribe_thread, daemon=True)
+        thread = threading.Thread(
+            target=self._transcribe_thread, 
+            args=(hf_token,),
+            daemon=True
+        )
         thread.start()
     
     def _update_progress_display(self):
@@ -419,26 +512,27 @@ class TranscriptionApp:
             self.progress_percent.config(text=f"{int(progress)}%")
             
             # Calculate time remaining
-            if progress > 5:  # Only show after we have some data
+            if progress > 5:
                 time_remaining = max(0, est_total - elapsed)
                 elapsed_str = self._format_duration(elapsed)
                 remaining_str = self._format_duration(time_remaining)
                 self.time_label.config(text=f"Elapsed: {elapsed_str} | Remaining: ~{remaining_str}")
             else:
-                self.time_label.config(text=f"Elapsed: {self._format_duration(elapsed)} | Calculating...")
+                self.time_label.config(text=f"Elapsed: {self._format_duration(elapsed)}")
         
         # Schedule next update
         self.progress_update_id = self.root.after(500, self._update_progress_display)
     
-    def _transcribe_thread(self):
+    def _transcribe_thread(self, hf_token: str = None):
         """Transcription logic running in background thread."""
         try:
             model_name = self.model_var.get()
-            self.transcriber = Transcriber(model_name)
+            self.transcriber = Transcriber(model_name, hf_token=hf_token)
             
             result = self.transcriber.transcribe(
                 audio_path=self.current_file,
                 include_timestamps=self.timestamps_var.get(),
+                enable_diarization=self.diarization_var.get(),
                 progress_callback=self._update_status
             )
             
@@ -465,14 +559,16 @@ class TranscriptionApp:
         self.is_transcribing = False
         self.transcribe_btn.config(state=NORMAL)
         self.model_combo.config(state="readonly")
+        if self.diarization_var.get():
+            self.token_entry.config(state=NORMAL)
         self.open_output_btn.config(state=NORMAL)
         
         # Display transcription
         self.output_text.insert(tk.END, result["text"])
         
+        speaker_info = "with speakers" if result.get("has_speakers") else "without speakers"
         self._update_status(
-            f"✅ Transcription complete! Language: {result['language']} | "
-            f"Saved to: {os.path.basename(result['output_path'])}"
+            f"✅ Complete! Language: {result['language']} | {speaker_info}"
         )
         
         # Store output path for "Open Folder" button
@@ -480,7 +576,9 @@ class TranscriptionApp:
         
         messagebox.showinfo(
             "Transcription Complete",
-            f"Successfully transcribed!\n\nTime taken: {self._format_duration(elapsed)}\n\nOutput saved to:\n{result['output_path']}"
+            f"Successfully transcribed {speaker_info}!\n\n"
+            f"Time taken: {self._format_duration(elapsed)}\n\n"
+            f"Output saved to:\n{result['output_path']}"
         )
     
     def _on_transcription_error(self, error_msg: str):
@@ -496,8 +594,10 @@ class TranscriptionApp:
         self.is_transcribing = False
         self.transcribe_btn.config(state=NORMAL)
         self.model_combo.config(state="readonly")
+        if self.diarization_var.get():
+            self.token_entry.config(state=NORMAL)
         
-        self._update_status(f"❌ Error: {error_msg}")
+        self._update_status(f"❌ Error: {error_msg[:50]}...")
         messagebox.showerror("Transcription Error", f"An error occurred:\n\n{error_msg}")
     
     def _update_status(self, message: str):

@@ -1,4 +1,7 @@
 openai-whisper
+mlx-whisper
+pyannote-audio
 torch
+torchaudio
 tkinterdnd2
 ttkbootstrap

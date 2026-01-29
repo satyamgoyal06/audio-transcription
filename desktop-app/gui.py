@@ -9,8 +9,9 @@ import ttkbootstrap as ttkb
 from ttkbootstrap.constants import *
 import threading
 import os
+import time
 
-from transcriber import Transcriber, is_supported_format, SUPPORTED_FORMATS
+from transcriber import Transcriber, is_supported_format, SUPPORTED_FORMATS, get_audio_duration
 
 
 class TranscriptionApp:
@@ -21,10 +22,10 @@ class TranscriptionApp:
         self.root = ttkb.Window(
             title="🎙️ Audio Transcriber",
             themename="darkly",
-            size=(700, 600),
+            size=(700, 650),
             resizable=(True, True)
         )
-        self.root.minsize(600, 500)
+        self.root.minsize(600, 550)
         
         # Center window on screen
         self._center_window()
@@ -33,6 +34,9 @@ class TranscriptionApp:
         self.current_file = None
         self.transcriber = None
         self.is_transcribing = False
+        self.audio_duration = 0.0
+        self.start_time = 0.0
+        self.progress_update_id = None
         
         # Build UI
         self._create_ui()
@@ -207,12 +211,36 @@ class TranscriptionApp:
         )
         progress_frame.pack(fill=X, pady=(0, 15))
         
+        # Progress bar (determinate mode for real progress)
+        self.progress_var = tk.DoubleVar(value=0)
         self.progress_bar = ttkb.Progressbar(
             progress_frame,
-            mode="indeterminate",
+            mode="determinate",
+            variable=self.progress_var,
+            maximum=100,
             bootstyle="success-striped"
         )
-        self.progress_bar.pack(fill=X, pady=(0, 10))
+        self.progress_bar.pack(fill=X, pady=(0, 5))
+        
+        # Progress percentage and time
+        progress_info_frame = ttkb.Frame(progress_frame)
+        progress_info_frame.pack(fill=X, pady=(0, 5))
+        
+        self.progress_percent = ttkb.Label(
+            progress_info_frame,
+            text="0%",
+            font=("Helvetica", 11, "bold"),
+            bootstyle="success"
+        )
+        self.progress_percent.pack(side=LEFT)
+        
+        self.time_label = ttkb.Label(
+            progress_info_frame,
+            text="",
+            font=("Helvetica", 10),
+            bootstyle="secondary"
+        )
+        self.time_label.pack(side=RIGHT)
         
         self.status_label = ttkb.Label(
             progress_frame,
@@ -300,14 +328,50 @@ class TranscriptionApp:
         filename = os.path.basename(file_path)
         size_mb = os.path.getsize(file_path) / (1024 * 1024)
         
+        # Get audio duration
+        self.audio_duration = get_audio_duration(file_path)
+        duration_str = self._format_duration(self.audio_duration) if self.audio_duration > 0 else "Unknown"
+        
         self.drop_label.config(text=f"📄 {filename}")
-        self.file_info.config(text=f"Size: {size_mb:.2f} MB | Path: {file_path}")
+        self.file_info.config(text=f"Size: {size_mb:.2f} MB | Duration: {duration_str} | Path: {file_path}")
         self._update_status(f"File loaded: {filename}")
+        
+        # Show estimated time
+        if self.audio_duration > 0:
+            model = self.model_var.get()
+            est_time = self._estimate_transcription_time(model)
+            self.time_label.config(text=f"Estimated time: {self._format_duration(est_time)}")
+    
+    def _format_duration(self, seconds: float) -> str:
+        """Format seconds to human-readable duration."""
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        elif seconds < 3600:
+            mins = int(seconds // 60)
+            secs = int(seconds % 60)
+            return f"{mins}m {secs}s"
+        else:
+            hours = int(seconds // 3600)
+            mins = int((seconds % 3600) // 60)
+            return f"{hours}h {mins}m"
+    
+    def _estimate_transcription_time(self, model: str) -> float:
+        """Estimate transcription time based on audio duration and model."""
+        if self.audio_duration <= 0:
+            return 0
+        speed = Transcriber.MODEL_SPEED.get(model, 16.0)
+        # Add 5 seconds for model loading overhead
+        return (self.audio_duration / speed) + 5
     
     def _on_model_change(self, event=None):
         """Update model description when selection changes."""
         model = self.model_var.get()
         self.model_desc.config(text=Transcriber.MODELS.get(model, ""))
+        
+        # Update estimated time
+        if self.audio_duration > 0:
+            est_time = self._estimate_transcription_time(model)
+            self.time_label.config(text=f"Estimated time: {self._format_duration(est_time)}")
     
     def _start_transcription(self):
         """Start the transcription process."""
@@ -323,14 +387,48 @@ class TranscriptionApp:
         self.is_transcribing = True
         self.transcribe_btn.config(state=DISABLED)
         self.model_combo.config(state=DISABLED)
-        self.progress_bar.start(10)
+        
+        # Reset progress
+        self.progress_var.set(0)
+        self.progress_percent.config(text="0%")
+        self.start_time = time.time()
         
         # Clear previous output
         self.output_text.delete(1.0, tk.END)
         
+        # Start progress updates
+        self._update_progress_display()
+        
         # Run transcription in thread
         thread = threading.Thread(target=self._transcribe_thread, daemon=True)
         thread.start()
+    
+    def _update_progress_display(self):
+        """Update progress bar and time estimates during transcription."""
+        if not self.is_transcribing:
+            return
+        
+        elapsed = time.time() - self.start_time
+        model = self.model_var.get()
+        est_total = self._estimate_transcription_time(model)
+        
+        if est_total > 0:
+            # Calculate progress percentage
+            progress = min((elapsed / est_total) * 100, 99)  # Cap at 99% until done
+            self.progress_var.set(progress)
+            self.progress_percent.config(text=f"{int(progress)}%")
+            
+            # Calculate time remaining
+            if progress > 5:  # Only show after we have some data
+                time_remaining = max(0, est_total - elapsed)
+                elapsed_str = self._format_duration(elapsed)
+                remaining_str = self._format_duration(time_remaining)
+                self.time_label.config(text=f"Elapsed: {elapsed_str} | Remaining: ~{remaining_str}")
+            else:
+                self.time_label.config(text=f"Elapsed: {self._format_duration(elapsed)} | Calculating...")
+        
+        # Schedule next update
+        self.progress_update_id = self.root.after(500, self._update_progress_display)
     
     def _transcribe_thread(self):
         """Transcription logic running in background thread."""
@@ -352,7 +450,17 @@ class TranscriptionApp:
     
     def _on_transcription_complete(self, result: dict):
         """Handle successful transcription."""
-        self.progress_bar.stop()
+        # Stop progress updates
+        if self.progress_update_id:
+            self.root.after_cancel(self.progress_update_id)
+        
+        # Set progress to 100%
+        self.progress_var.set(100)
+        self.progress_percent.config(text="100%")
+        
+        elapsed = time.time() - self.start_time
+        self.time_label.config(text=f"Completed in {self._format_duration(elapsed)}")
+        
         self.is_transcribing = False
         self.transcribe_btn.config(state=NORMAL)
         self.model_combo.config(state="readonly")
@@ -371,12 +479,19 @@ class TranscriptionApp:
         
         messagebox.showinfo(
             "Transcription Complete",
-            f"Successfully transcribed!\n\nOutput saved to:\n{result['output_path']}"
+            f"Successfully transcribed!\n\nTime taken: {self._format_duration(elapsed)}\n\nOutput saved to:\n{result['output_path']}"
         )
     
     def _on_transcription_error(self, error_msg: str):
         """Handle transcription error."""
-        self.progress_bar.stop()
+        # Stop progress updates
+        if self.progress_update_id:
+            self.root.after_cancel(self.progress_update_id)
+        
+        self.progress_var.set(0)
+        self.progress_percent.config(text="0%")
+        self.time_label.config(text="")
+        
         self.is_transcribing = False
         self.transcribe_btn.config(state=NORMAL)
         self.model_combo.config(state="readonly")

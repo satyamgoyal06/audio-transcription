@@ -5,8 +5,24 @@ Core module for audio-to-text transcription using OpenAI's Whisper model.
 
 import whisper
 import os
+import subprocess
+import json
 from datetime import datetime
 from typing import Callable, Optional
+
+
+def get_audio_duration(audio_path: str) -> float:
+    """Get audio duration in seconds using ffprobe."""
+    try:
+        cmd = [
+            'ffprobe', '-v', 'quiet', '-print_format', 'json',
+            '-show_format', audio_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        data = json.loads(result.stdout)
+        return float(data['format']['duration'])
+    except Exception:
+        return 0.0
 
 
 class Transcriber:
@@ -19,6 +35,16 @@ class Transcriber:
         "small": "Balanced speed/accuracy (~2.5GB RAM)",
         "medium": "High accuracy, slower (~5GB RAM)",
         "large": "Best accuracy, slowest (~10GB RAM)"
+    }
+    
+    # Approximate speed multipliers (how many seconds of audio processed per second)
+    # These are estimates for Apple M3 - actual speed varies
+    MODEL_SPEED = {
+        "tiny": 32.0,
+        "base": 16.0,
+        "small": 6.0,
+        "medium": 2.0,
+        "large": 1.0
     }
     
     def __init__(self, model_name: str = "base"):

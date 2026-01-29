@@ -1,0 +1,3 @@
+cd /Users/satyamgoyal/Downloads/transcription-project
+source venv/bin/activate
+python desktop-app/main.py
